@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html ng-app="quakes">
+  <head>
+    <script type="text/javascript" src="//cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.21/angular.min.js"></script>
+    <script type="text/javascript" src="app.js"></script>
+
+    
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300,400,600">
+    <link rel="stylesheet" href="//cdn.leafletjs.com/leaflet-0.7.3/leaflet.css">
+    <link rel="stylesheet" href="main.css">
+  </head>
+  <body ng-controller="MainController">
+
+    <div id="header">
+      <input id="date" type="date" ng-model="date">
+      <h1>Earthquakes &mdash; <span class="explain">{{ date ? ( date | date: 'MMM d, yyyy' ) : 'Last 30 days' }}</span></h1>
+    </div>
+
+    <div id="quakes">
+      <div class="quake"
+        ng-repeat="quake in (filteredQuakes = (quakes | filter: isSameDay))"
+        ng-click="selectQuake(quake)"
+        ng-class="{selected: quake.id == selectedQuake.id}">
+        <div class="magnitude" ng-bind="quake.properties.mag | number: 1"></div>
+        <div class="title">Earthquake on {{quake.properties.time | date: 'MMM d, h:mm a'}}</div>
+        <div class="location" ng-bind="quake.properties.place"></div>
+        <div class="nearest" ng-show="nearest == quake.id">Distance from you: <b>{{nearestDistance | number: 2 }}</b> miles</div>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+  </body>
+</html>

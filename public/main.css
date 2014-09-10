@@ -1,0 +1,84 @@
+body {
+  font-family: "Open Sans", sans-serif;
+}
+
+#header {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 80px;
+
+  background: #2B2B2B;
+  color: white;
+}
+
+#header h1 {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 300;
+  margin-left: 25px;
+}
+
+#map {
+  position: absolute;
+  top: 80px; bottom: 0; right: 0;
+  left: 351px;
+}
+
+#quakes {
+  position: absolute;
+  top: 80px; left: 0; bottom: 0;
+  width: 350px;
+
+  background: #F4F4F4;
+  border-right: 1px solid #DFDFDF;
+  overflow: scroll;
+  font-size: 14px;
+}
+
+.quake {
+  padding: 15px;
+  border-bottom: 1px solid #DFDFDF;
+}
+
+.quake .magnitude {
+  float: left;
+  font-size: 32px;
+  margin-right: 15px;
+  font-weight: 300;
+  color: #8b8b8b;
+}
+
+.quake .title {
+  color: #8b8b8b;
+  margin-bottom: 10px;
+}
+
+.quake .location {
+  color: #a7a7a7;
+  font-weight: 300;
+}
+
+.quake .nearest {
+  color: #d15543;
+  font-weight: 300;
+  margin-top: 10px;
+}
+
+.selected {
+  background: #828282;
+}
+
+.selected div {
+  color: white !important;
+}
+
+#date {
+  padding: 5px;
+  margin: 20px 15px;
+  float: right;
+  font: 300 18px "Open Sans";
+  text-transform: uppercase;
+  background: #555555;
+  color: white;
+  border: 0;
+}
