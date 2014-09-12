@@ -75,8 +75,8 @@ app.controller("MainController", [
       $http.get("/quakes").success(function(quakes) {
         for (var i in quakes) {
           quakes[i].point = L.latLng(
-            quakes[i].place.coordinates[1],
-            quakes[i].place.coordinates[0]);
+            quakes[i].geometry.coordinates[1],
+            quakes[i].geometry.coordinates[0]);
 
           quakes[i].marker = L.circleMarker(quakes[i].point, {
             radius: quakes[i].properties.mag * 2,
