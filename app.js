@@ -1,6 +1,7 @@
 
 var r = require("rethinkdb");
 var express = require("express");
+var bluebird = require("bluebird");
 var config = require("./config");
 
 var app = express();
@@ -25,27 +26,36 @@ refresh =
 // Perform initial setup, creating the database and table
 // It also creates a geospatial index on the `geometry` proeprty
 // and performs the query above in order to populate the data
-r.connect(config.database, function(err, conn) {
-  r.dbCreate(config.database.db).run(conn, function(err, output) {
-    if (err) return conn.close();
-    r.tableCreate("quakes").run(conn, function(err, output) {
-      r.table("quakes").indexCreate("geometry", {geo: true}).run(conn);
-      refresh.run(conn).then(function(result) { conn.close(); });
-    });
-  });
+r.connect(config.database).then(function(conn) {
+  this.conn = conn;
+  return r.dbCreate(config.database.db).run(conn);
+}).then(function(output) {
+  return r.tableCreate("quakes").run(this.conn);
+}).then(function(output) {
+  return r.table("quakes").indexCreate(
+    "geometry", {geo: true}).run(conn);
+}).then(function(output) { 
+  return refresh.run(conn);
+}).finally(function(output) {
+  if (this.conn)
+    this.conn.close();
 });
 
 // Use the refresh query above to automatically update the the
-// earthquake database with new data at 30 minute intervals
+// earthquake database with new data at 30 minute intervals and
+// delete the records that are older than 30 days
 setInterval(function() {
-  r.connect(config.database, function(err, conn) {
-    console.log("Refreshing...");
-    refresh.run(conn).then(function (err, out) {
+  r.connect(config.database).then(function(conn) {
+    this.conn = conn;
+
+    return bluebird.join(refresh.run(conn),
       r.table("quakes")
-        .filter(r.epochTime(r.row("properties")("time").mul(0.001)).lt(
-            r.now().sub(60 * 60 * 24 * 30)))
-        .delete().run(conn);
-    });
+        .filter(r.epochTime(r.row("properties")("time").div(1000)).lt(
+         r.now().sub(60 * 60 * 24 * 30))).delete().run(conn));
+  })
+  .finally(function(output) {
+    if (this.conn)
+      this.conn.close();
   });
 }, 30 * 1000 * 60);
 
@@ -53,14 +63,17 @@ setInterval(function() {
 // the database and retrieves the earthquakes ordered by magnitude
 // and then returns the output as a JSON array
 app.get("/quakes", function(req, res) {
-  r.connect(config.database, function(err, conn) {
-    r.table("quakes")
-      .orderBy(r.desc(r.row("properties")("mag"))).run(conn)
-      .then(function(cursor) { return cursor.toArray(); })
-      .then(function(result) {
-        res.json(result);
-        conn.close();
-      });
+  r.connect(config.database).then(function(conn) {
+    this.conn = conn;
+
+    return r.table("quakes").orderBy(
+      r.desc(r.row("properties")("mag"))).run(conn);
+  })
+  .then(function(cursor) { return cursor.toArray(); })
+  .then(function(result) { res.json(result); })
+  .finally(function() {
+    if (this.conn)
+      this.conn.close();
   });
 });
 
@@ -75,14 +88,17 @@ app.get("/nearest", function(req, res) {
   if (!latitude || !longitude)
     return res.json({err: "Invalid Point"});
 
-  r.connect(config.database, function(err, conn) {
-    r.table("quakes")
-      .getNearest(r.point(+latitude, +longitude), {
-        index: "geometry", unit: "mi"
-      }).run(conn).then(function(result) {
-        res.json(result);
-        conn.close();
-      });
+  r.connect(config.database).then(function(conn) {
+    this.conn = conn;
+
+    return r.table("quakes").getNearest(
+      r.point(parseFloat(latitude), parseFloat(longitude)),
+      { index: "geometry", unit: "mi" }).run(conn);
+  })
+  .then(function(result) { res.json(result); })
+  .finally(function(result) {
+    if (this.conn)
+      this.conn.close();
   });
 });
 
