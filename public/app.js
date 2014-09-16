@@ -62,6 +62,8 @@ app.controller("MainController", [
             if (!output.length) return;
             $scope.nearest = output[0].doc.id;
             $scope.nearestDistance = output[0].dist;
+          }).error(function(err) {
+            console.log("Failed to retrieve nearest quake:", err);
           });
       });
     };
@@ -85,6 +87,8 @@ app.controller("MainController", [
         }
 
         $scope.quakes = quakes;
+      }).error(function(err) {
+        console.log("Failed to retrieve quakes:", err);
       });
     };
 

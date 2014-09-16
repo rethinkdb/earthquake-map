@@ -36,6 +36,9 @@ r.connect(config.database).then(function(conn) {
     "geometry", {geo: true}).run(conn);
 }).then(function(output) { 
   return refresh.run(conn);
+}).error(function(err) {
+  if (err.msg.indexOf("already exists") == -1)
+    console.log(err);
 }).finally(function(output) {
   if (this.conn)
     this.conn.close();
@@ -52,6 +55,9 @@ setInterval(function() {
       r.table("quakes")
         .filter(r.epochTime(r.row("properties")("time").div(1000)).lt(
          r.now().sub(60 * 60 * 24 * 30))).delete().run(conn));
+  })
+  .error(function(err) {
+    console.log("Failed to refresh:", err);
   })
   .finally(function(output) {
     if (this.conn)
@@ -71,6 +77,10 @@ app.get("/quakes", function(req, res) {
   })
   .then(function(cursor) { return cursor.toArray(); })
   .then(function(result) { res.json(result); })
+  .error(function(err) {
+    console.log("Error handling /quakes request:", err);
+    res.status(500).json({success: false, err: err});
+  })
   .finally(function() {
     if (this.conn)
       this.conn.close();
@@ -96,6 +106,10 @@ app.get("/nearest", function(req, res) {
       { index: "geometry", unit: "mi" }).run(conn);
   })
   .then(function(result) { res.json(result); })
+  .error(function(err) {
+    console.log("Error handling /nearest request:", err);
+    res.status(500).json({success: false, err: err});
+  })
   .finally(function(result) {
     if (this.conn)
       this.conn.close();
