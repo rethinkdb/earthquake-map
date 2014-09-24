@@ -29,17 +29,22 @@ refresh =
 r.connect(config.database).then(function(conn) {
   this.conn = conn;
   return r.dbCreate(config.database.db).run(conn);
-}).then(function(output) {
+})
+.then(function(output) {
   return r.tableCreate("quakes").run(this.conn);
-}).then(function(output) {
+})
+.then(function(output) {
   return r.table("quakes").indexCreate(
     "geometry", {geo: true}).run(conn);
-}).then(function(output) { 
+})
+.then(function(output) { 
   return refresh.run(conn);
-}).error(function(err) {
+})
+.error(function(err) {
   if (err.msg.indexOf("already exists") == -1)
     console.log(err);
-}).finally(function(output) {
+})
+.finally(function() {
   if (this.conn)
     this.conn.close();
 });
@@ -59,7 +64,7 @@ setInterval(function() {
   .error(function(err) {
     console.log("Failed to refresh:", err);
   })
-  .finally(function(output) {
+  .finally(function() {
     if (this.conn)
       this.conn.close();
   });
@@ -96,7 +101,7 @@ app.get("/nearest", function(req, res) {
   var longitude = req.param("longitude");
 
   if (!latitude || !longitude)
-    return res.json({err: "Invalid Point"});
+    return res.status(500).json({err: "Invalid Point"});
 
   r.connect(config.database).then(function(conn) {
     this.conn = conn;
@@ -108,13 +113,13 @@ app.get("/nearest", function(req, res) {
   .then(function(result) { res.json(result); })
   .error(function(err) {
     console.log("Error handling /nearest request:", err);
-    res.status(500).json({success: false, err: err});
+    res.status(500).json({err: err});
   })
-  .finally(function(result) {
+  .finally(function() {
     if (this.conn)
       this.conn.close();
   });
 });
 
-app.listen(8090);
-console.log("Server started on port 8090");
+app.listen(config.port);
+console.log("Server started on port", config.port);
