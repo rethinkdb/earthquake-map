@@ -18,8 +18,8 @@ refresh =
     r.http(feedUrl)("features").merge(function(item) {
       return {
         geometry: r.point(
-          item("geometry")("coordinates")(1),
-          item("geometry")("coordinates")(0))
+          item("geometry")("coordinates")(0),
+          item("geometry")("coordinates")(1))
       }
     }), {conflict: "replace"});
 
@@ -30,15 +30,15 @@ r.connect(config.database).then(function(conn) {
   this.conn = conn;
   return r.dbCreate(config.database.db).run(conn);
 })
-.then(function(output) {
+.then(function() {
   return r.tableCreate("quakes").run(this.conn);
 })
-.then(function(output) {
+.then(function() {
   return r.table("quakes").indexCreate(
-    "geometry", {geo: true}).run(conn);
+    "geometry", {geo: true}).run(this.conn);
 })
-.then(function(output) { 
-  return refresh.run(conn);
+.then(function() { 
+  return refresh.run(this.conn);
 })
 .error(function(err) {
   if (err.msg.indexOf("already exists") == -1)
@@ -107,8 +107,8 @@ app.get("/nearest", function(req, res) {
     this.conn = conn;
 
     return r.table("quakes").getNearest(
-      r.point(parseFloat(latitude), parseFloat(longitude)),
-      { index: "geometry", unit: "mi" }).run(conn);
+      r.point(parseFloat(longitude), parseFloat(latitude)),
+      { index: "geometry", maxDist: 1000, unit: "mi" }).run(conn);
   })
   .then(function(result) { res.json(result); })
   .error(function(err) {
