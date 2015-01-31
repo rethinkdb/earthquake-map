@@ -13,7 +13,7 @@ var feedUrl = "earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojs
 // the locations into point objects. Insert the data into the
 // `quakes` table. This query is assigned to a variable so it
 // can easily be reused in two different parts of the program.
-refresh =
+var refresh =
   r.table("quakes").insert(
     r.http(feedUrl)("features").merge(function(item) {
       return {
@@ -26,35 +26,37 @@ refresh =
 // Perform initial setup, creating the database and table
 // It also creates a geospatial index on the `geometry` proeprty
 // and performs the query above in order to populate the data
-r.connect(config.database).then(function(conn) {
-  this.conn = conn;
+var conn;
+r.connect(config.database).then(function(c) {
+  conn = c;
   return r.dbCreate(config.database.db).run(conn);
 })
 .then(function() {
-  return r.tableCreate("quakes").run(this.conn);
+  return r.tableCreate("quakes").run(conn);
 })
 .then(function() {
   return r.table("quakes").indexCreate(
-    "geometry", {geo: true}).run(this.conn);
+    "geometry", {geo: true}).run(conn);
 })
 .then(function() { 
-  return refresh.run(this.conn);
+  return refresh.run(conn);
 })
 .error(function(err) {
   if (err.msg.indexOf("already exists") == -1)
     console.log(err);
 })
 .finally(function() {
-  if (this.conn)
-    this.conn.close();
+  if (conn)
+    conn.close();
 });
 
 // Use the refresh query above to automatically update the the
 // earthquake database with new data at 30 minute intervals and
 // delete the records that are older than 30 days
 setInterval(function() {
-  r.connect(config.database).then(function(conn) {
-    this.conn = conn;
+  var conn;
+  r.connect(config.database).then(function(c) {
+    conn = c;
 
     return bluebird.join(refresh.run(conn),
       r.table("quakes")
@@ -65,8 +67,8 @@ setInterval(function() {
     console.log("Failed to refresh:", err);
   })
   .finally(function() {
-    if (this.conn)
-      this.conn.close();
+    if (conn)
+      conn.close();
   });
 }, 30 * 1000 * 60);
 
@@ -74,8 +76,9 @@ setInterval(function() {
 // the database and retrieves the earthquakes ordered by magnitude
 // and then returns the output as a JSON array
 app.get("/quakes", function(req, res) {
-  r.connect(config.database).then(function(conn) {
-    this.conn = conn;
+  var conn;
+  r.connect(config.database).then(function(c) {
+    conn = c;
 
     return r.table("quakes").orderBy(
       r.desc(r.row("properties")("mag"))).run(conn);
@@ -87,8 +90,8 @@ app.get("/quakes", function(req, res) {
     res.status(500).json({success: false, err: err});
   })
   .finally(function() {
-    if (this.conn)
-      this.conn.close();
+    if (conn)
+      conn.close();
   });
 });
 
@@ -103,8 +106,10 @@ app.get("/nearest", function(req, res) {
   if (!latitude || !longitude)
     return res.status(500).json({err: "Invalid Point"});
 
-  r.connect(config.database).then(function(conn) {
-    this.conn = conn;
+  var conn;
+
+  r.connect(config.database).then(function(c) {
+    conn = c;
 
     return r.table("quakes").getNearest(
       r.point(parseFloat(longitude), parseFloat(latitude)),
@@ -116,8 +121,8 @@ app.get("/nearest", function(req, res) {
     res.status(500).json({err: err});
   })
   .finally(function() {
-    if (this.conn)
-      this.conn.close();
+    if (conn)
+      conn.close();
   });
 });
 
