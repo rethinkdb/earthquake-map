@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebGL Earthquake Map</title>
+    <script src="https://cdn.jsdelivr.net/polyfills/polyfill.js+promise,fetch"></script>
+    <script src="Cesium/Cesium.js"></script>
+    <style>
+      @import url(Cesium/Widgets/widgets.css);
+
+      #cesiumContainer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+        font-family: sans-serif;
+      }
+
+      html {
+        height: 100%;
+      }
+
+      body {
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+        height: 100%;
+      }
+    </style>
+  </head>
+<body>
+  <div id="cesiumContainer"></div>
+
+  <script>
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+      timeline: false
+    });
+
+    fetch('/quakes')
+    .then(function(res) { return res.json() })
+    .then(function(quakes) {
+      quakes.forEach(function(quake) {
+        console.log(quake);
+        viewer.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(
+            quake.geometry.coordinates[0],
+            quake.geometry.coordinates[1]),
+          name: quake.properties.title,
+          ellipse: {
+            semiMinorAxis: 150000.0,
+            semiMajorAxis: 150000.0,
+            extrudedHeight: 50000.0 * (((quake.properties.mag - 4) * 100) / 4),
+            material: Cesium.Color.BLUE.withAlpha(0.7),
+            outline: true
+          }
+        });
+
+      });
+    });
+  </script>
+</body>
+</html>
